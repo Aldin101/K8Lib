@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
+﻿using UnityEngine;
+using HarmonyLib;
 using BepInEx;
 
 namespace K8Lib
@@ -18,6 +16,12 @@ namespace K8Lib
         {
             SettingsManager settingsManager = new SettingsManager();
             settingsManager.scrollFix();
+        }
+
+        private void OnDestory()
+        {
+            Harmony harmony = new HarmonyLib.Harmony(PluginInfo.PLUGIN_GUID);
+            harmony.UnpatchSelf();
         }
     }
 }
