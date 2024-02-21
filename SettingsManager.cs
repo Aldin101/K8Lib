@@ -4,11 +4,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Reflection;
+using static SettingsManager.SettingsElement;
 
 public class SettingsManager
 {
-    public static List<ISettingsElement> settingsElements = new List<ISettingsElement>();
-        
+    private static List<ISettingsElement> settingsElements = new List<ISettingsElement>();
+    private static GameManager GM = GameManager.GM;
+
     public void scrollFix()
     {
         GameObject settingsMenu = GameObject.Find("SettingsMenu");
@@ -57,25 +59,42 @@ public class SettingsManager
         {
             public TitleBar(string name, string text)
             {
-                GameObject applicationSettingsMenu = GameObject.Find("APPLICATION");
+                GameObject GTTOD = GM.gameObject;
+                if (GTTOD == null)
+                {
+                    Debug.LogError("GTTOD not found");
+                    return;
+                }
+
+                GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
                 if (applicationSettingsMenu == null)
                 {
                     Debug.LogError("Application settings menu not found");
                     return;
                 }
 
-                GameObject inGameTitleBar = applicationSettingsMenu.transform.Find("------MODS------").gameObject;
+                if (applicationSettingsMenu.activeSelf == false)
+                {
+                    return;
+                }
+
+                GameObject inGameTitleBar = applicationSettingsMenu.transform.GetChild(1).gameObject;
+
                 if (inGameTitleBar == null)
                 {
                     Debug.LogError("In game title bar not found");
                     return;
                 }
 
+                Debug.Log("2");
+
                 GameObject titleBar = GameObject.Instantiate(inGameTitleBar, applicationSettingsMenu.transform, false);
                 titleBar.name = name;
                 titleBar.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
 
-                Text titleBarText = titleBar.transform.Find("Text").gameObject.GetComponent<Text>();
+                Text titleBarText = titleBar.GetComponentsInChildren<Text>()[0];
+
                 titleBarText.text = text;
 
                 settingsElements.Add(this);
@@ -86,23 +105,35 @@ public class SettingsManager
         {
             public CheckBox(string name, string text, bool startingState, Action<bool> onValueChanged)
             {
-                GameObject applicationSettingsMenu = GameObject.Find("APPLICATION");
+                GameObject GTTOD = GM.gameObject;
+                if (GTTOD == null)
+                {
+                    Debug.LogError("GTTOD not found");
+                    return;
+                }
+
+                GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
                 if (applicationSettingsMenu == null)
                 {
                     Debug.LogError("Application settings menu not found");
                     return;
                 }
 
-                GameObject GTTOD = applicationSettingsMenu.transform.GetRoot().gameObject;
+                if (applicationSettingsMenu.activeSelf == false)
+                {
+                    return;
+                }
+
                 ac_OptionsMenu optionsMenu = GTTOD.GetComponent<ac_OptionsMenu>();
-                GameObject graphicsMenu = optionsMenu.OptionScreens[2].gameObject;
+                GameObject graphicsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
                 if (graphicsMenu == null)
                 {
                     Debug.LogError("Graphics menu not found");
                     return;
                 }
 
-                GameObject inGameCheckBox = graphicsMenu.transform.Find("Fullscreen").gameObject;
+                GameObject inGameCheckBox = graphicsMenu.transform.GetChild(3).gameObject;
                 if (inGameCheckBox == null)
                 {
                     Debug.LogError("In game check box not found");
@@ -114,19 +145,19 @@ public class SettingsManager
                 checkBox.name = name;
                 checkBox.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
 
-                checkBox.transform.Find("FullscreenToggle").gameObject.name = $"{name}Toggle";
+                checkBox.transform.GetChild(1).gameObject.name = $"{name}Toggle";
 
-                Text checkBoxText = checkBox.transform.Find("OptionTitleLeft").Find("Text").GetComponent<Text>();
+                Text checkBoxText = checkBox.transform.GetChild(0).GetChild(0).GetComponent<Text>();
                 checkBoxText.text = text;
 
-                Toggle toggle = checkBox.transform.Find($"{name}Toggle").gameObject.GetComponent<Toggle>();
+                Toggle toggle = checkBox.transform.GetChild(1).gameObject.GetComponent<Toggle>();
                 Toggle.DestroyImmediate(toggle);
-                toggle = checkBox.transform.Find($"{name}Toggle").gameObject.AddComponent<Toggle>();
+                toggle = checkBox.transform.GetChild(1).gameObject.AddComponent<Toggle>();
                 toggle.onValueChanged.AddListener(new UnityAction<bool>(onValueChanged));
 
-                toggle.graphic = checkBox.transform.Find($"{name}Toggle").gameObject.
-                    transform.Find("Background").gameObject.
-                    transform.Find("Checkmark").gameObject.GetComponent<Image>();
+                toggle.graphic = checkBox.transform.GetChild(1).gameObject.
+                    transform.GetChild(0).gameObject.
+                    transform.GetChild(0).gameObject.GetComponent<Image>();
 
                 toggle.isOn = startingState;
 
@@ -138,23 +169,35 @@ public class SettingsManager
         {
             public Slider(string name, string text, float startingValue, float minValue, float maxValue, bool useWholeNumbers, Action<float> onValueChanged)
             {
-                GameObject applicationSettingsMenu = GameObject.Find("APPLICATION");
+                GameObject GTTOD = GM.gameObject;
+                if (GTTOD == null)
+                {
+                    Debug.LogError("GTTOD not found");
+                    return;
+                }
+
+                GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
                 if (applicationSettingsMenu == null)
                 {
                     Debug.LogError("Application settings menu not found");
                     return;
                 }
 
-                GameObject GTTOD = applicationSettingsMenu.transform.GetRoot().gameObject;
+                if (applicationSettingsMenu.activeSelf == false)
+                {
+                    return;
+                }
+
                 ac_OptionsMenu optionsMenu = GTTOD.GetComponent<ac_OptionsMenu>();
-                GameObject graphicsMenu = optionsMenu.OptionScreens[2].gameObject;
+                GameObject graphicsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
                 if (graphicsMenu == null)
                 {
                     Debug.LogError("Graphics menu not found");
                     return;
                 }
 
-                GameObject inGameSlider = graphicsMenu.transform.Find("FieldOfView").gameObject;
+                GameObject inGameSlider = graphicsMenu.transform.GetChild(5).gameObject;
                 if (inGameSlider == null)
                 {
                     Debug.LogError("In game slider not found");
@@ -165,19 +208,19 @@ public class SettingsManager
                 slider.name = name;
                 slider.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
 
-                Text sliderText = slider.transform.Find("OptionTitleLeft").Find("Text").GetComponent<Text>();
+                Text sliderText = slider.transform.GetChild(0).GetChild(0).GetComponent<Text>();
                 sliderText.text = text;
 
-                GameObject settingsUI = slider.transform.Find("SettingUI").gameObject;
+                GameObject settingsUI = slider.transform.GetChild(1).gameObject;
 
-                settingsUI.transform.Find("FieldOfViewSlider").gameObject.name = $"{name}Slider";
-                settingsUI.transform.Find("FieldOfViewInput").gameObject.name = $"{name}Input";
-                settingsUI.transform.Find($"{name}Input").transform.
-                    Find("FieldOfViewInput Input Caret").gameObject.name = $"{name}InputCaret";
+                settingsUI.transform.GetChild(0).gameObject.name = $"{name}Slider";
+                settingsUI.transform.GetChild(1).gameObject.name = $"{name}Input";
+                settingsUI.transform.GetChild(1).transform.
+                    GetChild(0).gameObject.name = $"{name} Input Caret";
 
-                UnityEngine.UI.Slider sliderBody = settingsUI.transform.Find($"{name}Slider").gameObject.GetComponent<UnityEngine.UI.Slider>();
+                UnityEngine.UI.Slider sliderBody = settingsUI.transform.GetChild(0).gameObject.GetComponent<UnityEngine.UI.Slider>();
                 UnityEngine.UI.Slider.DestroyImmediate(sliderBody);
-                sliderBody = settingsUI.transform.Find($"{name}Slider").gameObject.AddComponent<UnityEngine.UI.Slider>();
+                sliderBody = settingsUI.transform.GetChild(0).gameObject.AddComponent<UnityEngine.UI.Slider>();
 
                 sliderBody.onValueChanged.RemoveAllListeners();
                 sliderBody.onValueChanged.AddListener(new UnityAction<float>(onValueChanged));
@@ -185,22 +228,22 @@ public class SettingsManager
                 sliderBody.maxValue = maxValue;
                 sliderBody.wholeNumbers = useWholeNumbers;
 
-                sliderBody.image = settingsUI.transform.Find($"{name}Slider").transform.
-                    Find("Handle Slide Area").gameObject.transform.
-                    Find("Handle").gameObject.GetComponent<Image>();
+                sliderBody.image = settingsUI.transform.GetChild(0).transform.
+                    GetChild(2).gameObject.transform.
+                    GetChild(0).gameObject.GetComponent<Image>();
 
-                sliderBody.handleRect = settingsUI.transform.Find($"{name}Slider").transform.
-                    Find("Handle Slide Area").gameObject.transform.
-                    Find("Handle").gameObject.GetComponent<RectTransform>();
+                sliderBody.handleRect = settingsUI.transform.GetChild(0).transform.
+                    GetChild(2).gameObject.transform.
+                    GetChild(0).gameObject.GetComponent<RectTransform>();
 
-                sliderBody.fillRect = settingsUI.transform.Find($"{name}Slider").transform.
-                    Find("Fill Area").transform.
-                    Find("Fill").gameObject.GetComponent<RectTransform>();
+                sliderBody.fillRect = settingsUI.transform.GetChild(0).transform.
+                    GetChild(1).transform.
+                    GetChild(0).gameObject.GetComponent<RectTransform>();
 
 
-                InputField input = settingsUI.transform.Find($"{name}Input").gameObject.GetComponent<InputField>();
+                InputField input = settingsUI.transform.GetChild(1).gameObject.GetComponent<InputField>();
                 InputField.DestroyImmediate(input);
-                input = settingsUI.transform.Find($"{name}Input").gameObject.AddComponent<InputField>();
+                input = settingsUI.transform.GetChild(1).gameObject.AddComponent<InputField>();
                 input.onSubmit.RemoveAllListeners();
                 input.onSubmit.AddListener((string value) =>
                 {
@@ -221,7 +264,7 @@ public class SettingsManager
 
                 sliderBody.onValueChanged.AddListener((float value) =>
                 {
-                    input.transform.Find("Text").GetComponent<Text>().text = value.ToString();
+                    input.transform.GetChild(2).GetComponent<Text>().text = value.ToString();
                 });
 
                 sliderBody.value = startingValue;
@@ -240,37 +283,49 @@ public class SettingsManager
                     options.Add(new Dropdown.OptionData(element));
                 }
 
-                GameObject applicationSettingsMenu = GameObject.Find("APPLICATION");
+                GameObject GTTOD = GM.gameObject;
+                if (GTTOD == null)
+                {
+                    Debug.LogError("GTTOD not found");
+                    return;
+                }
+
+                GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
                 if (applicationSettingsMenu == null)
                 {
                     Debug.LogError("Application settings menu not found");
                     return;
                 }
 
-                GameObject GTTOD = applicationSettingsMenu.transform.GetRoot().gameObject;
+                if (applicationSettingsMenu.activeSelf == false)
+                {
+                    return;
+                }
+
                 ac_OptionsMenu optionsMenu = GTTOD.GetComponent<ac_OptionsMenu>();
-                GameObject graphicsMenu = optionsMenu.OptionScreens[2].gameObject;
+                GameObject graphicsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
                 if (graphicsMenu == null)
                 {
                     Debug.LogError("Graphics menu not found");
                     return;
                 }
 
-                GameObject resolutionPicker = graphicsMenu.transform.Find("Resolution").gameObject;
+                GameObject resolutionPicker = graphicsMenu.transform.GetChild(2).gameObject;
                 if (resolutionPicker == null)
                 {
                     Debug.LogError("Resolution picker not found");
                     return;
                 }
 
-                GameObject referenceChild = resolutionPicker.transform.Find("ResolutionDropdown").gameObject;
+                GameObject referenceChild = resolutionPicker.transform.GetChild(1).gameObject;
                 GameObject dropdown = GameObject.Instantiate(resolutionPicker, applicationSettingsMenu.transform, false);
                 dropdown.name = name;
                 dropdown.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
-                dropdown.transform.Find("OptionTitleLeft").Find("Text").gameObject.GetComponent<Text>().text = text;
-                dropdown.transform.Find("ResolutionDropdown").gameObject.name = $"{name}Dropdown";
+                dropdown.transform.GetChild(0).GetChild(0).gameObject.GetComponent<Text>().text = text;
+                dropdown.transform.GetChild(1).gameObject.name = $"{name}Dropdown";
 
-                Dropdown dropdownComponent = dropdown.transform.Find($"{name}Dropdown").gameObject.GetComponent<Dropdown>();
+                Dropdown dropdownComponent = dropdown.transform.GetChild(1).gameObject.GetComponent<Dropdown>();
                 var originalValues = new Dictionary<string, object>();
                 foreach (var prop in dropdownComponent.GetType().GetProperties())
                 {
@@ -281,7 +336,7 @@ public class SettingsManager
                 }
 
                 Dropdown.DestroyImmediate(dropdownComponent);
-                dropdownComponent = dropdown.transform.Find($"{name}Dropdown").gameObject.AddComponent<Dropdown>();
+                dropdownComponent = dropdown.transform.GetChild(1).gameObject.AddComponent<Dropdown>();
 
                 foreach (var prop in dropdownComponent.GetType().GetProperties())
                 {
@@ -303,7 +358,71 @@ public class SettingsManager
 
         public class TextInput : ISettingsElement
         {
+            public TextInput(string name, string text, string existingText, string placeholderText, Action<string> OnValueChange)
+            {
+                GameObject GTTOD = GM.gameObject;
+                if (GTTOD == null)
+                {
+                    Debug.LogError("GTTOD not found");
+                    return;
+                }
 
+                GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
+                if (applicationSettingsMenu == null)
+                {
+                    Debug.LogError("Application settings menu not found");
+                    return;
+                }
+
+                if (applicationSettingsMenu.activeSelf == false)
+                {
+                    return;
+                }
+
+                GameObject inGameTextInput = applicationSettingsMenu.transform.GetChild(2).gameObject;
+                if (inGameTextInput == null)
+                {
+                    Debug.LogError("In game text input not found");
+                    return;
+                }
+
+                GameObject textInput = GameObject.Instantiate(inGameTextInput, applicationSettingsMenu.transform, false);
+                textInput.name = name;
+                textInput.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
+
+                textInput.transform.GetChild(0).GetChild(0).gameObject.GetComponent<Text>().text = text;
+                textInput.transform.GetChild(1).gameObject.name = $"{name}Input";
+
+                InputField inputComponent = textInput.transform.GetChild(1).gameObject.GetComponent<InputField>();
+                var originalValues = new Dictionary<string, object>();
+                foreach (var prop in inputComponent.GetType().GetProperties())
+                {
+                    if (prop.CanRead)
+                    {
+                        originalValues[prop.Name] = prop.GetValue(inputComponent, null);
+                    }
+                }
+
+                InputField.DestroyImmediate(inputComponent);
+                inputComponent = textInput.transform.GetChild(1).gameObject.AddComponent<InputField>();
+
+                foreach (var prop in inputComponent.GetType().GetProperties())
+                {
+                    if (prop.Name != "onValueChanged" && prop.Name != "onSubmit" && prop.CanWrite && originalValues.ContainsKey(prop.Name))
+                    {
+                        prop.SetValue(inputComponent, originalValues[prop.Name], null);
+                    }
+                }
+
+                inputComponent.text = existingText;
+                inputComponent.placeholder.GetComponent<Text>().text = placeholderText;
+                inputComponent.onSubmit.RemoveAllListeners();
+                inputComponent.onValueChanged.RemoveAllListeners();
+
+                inputComponent.onValueChanged.AddListener(new UnityAction<string>(OnValueChange));
+                inputComponent.onSubmit.AddListener(new UnityAction<string>(OnValueChange));
+            }
         }
     }
 }
