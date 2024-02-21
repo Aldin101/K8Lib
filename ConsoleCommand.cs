@@ -1,9 +1,7 @@
-﻿using BepInEx.Logging;
-using HarmonyLib;
-using System;
-using System.Diagnostics;
+﻿using System;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using HarmonyLib;
 
 namespace K8Lib
 {

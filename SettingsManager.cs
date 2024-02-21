@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Reflection;
-using static SettingsManager.SettingsElement;
 
 public class SettingsManager
 {
