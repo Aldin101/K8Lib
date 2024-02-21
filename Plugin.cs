@@ -16,6 +16,11 @@ namespace K8Lib
         {
             SettingsManager settingsManager = new SettingsManager();
             settingsManager.scrollFix();
+
+            if (SettingsManager.GM == null)
+            {
+                SettingsManager.GM = GameManager.GM;
+            }
         }
 
         private void OnDestory()
