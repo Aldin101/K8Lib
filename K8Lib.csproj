@@ -22,7 +22,7 @@
 
     <ItemGroup>
 	    <Reference Include="netstandard">
-	      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Get To The Orange Door\Get To The Orange Door_Data\Managed\netstandard.dll</HintPath>
+	      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Get To The Orange Door\Get To The Orange Door_Data\Managed\netstandard.dll</HintPath>
 	    </Reference>
 	    <Reference Include="UnityEngine.UI">
 		    <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Get To The Orange Door\Get To The Orange Door_Data\Managed\UnityEngine.UI.dll</HintPath>
