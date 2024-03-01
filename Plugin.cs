@@ -5,8 +5,10 @@ using BepInEx;
 namespace K8Lib
 {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
-    public class Plugin : BaseUnityPlugin
+    public class K8Lib : BaseUnityPlugin
     {
+        public static GameManager GM = GameManager.GM;
+
         private void Awake()
         {
             Logger.LogInfo($"{PluginInfo.PLUGIN_NAME} V{PluginInfo.PLUGIN_VERSION} has loaded");
@@ -16,10 +18,14 @@ namespace K8Lib
         {
             SettingsManager settingsManager = new SettingsManager();
             settingsManager.scrollFix();
+            settingsManager.checkElements();
 
-            if (SettingsManager.GM == null)
+            InventoryManager inventoryManager = new InventoryManager();
+            inventoryManager.checkElements();
+
+            if (GM == null)
             {
-                SettingsManager.GM = GameManager.GM;
+                GM = GameManager.GM;
             }
         }
 

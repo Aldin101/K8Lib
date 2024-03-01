@@ -9,7 +9,6 @@ namespace K8Lib
     public class SettingsManager
     {
         private static List<string> settingsElements = new List<string>();
-        public static GameManager GM = GameManager.GM;
 
         public void scrollFix()
         {
@@ -51,6 +50,36 @@ namespace K8Lib
             }
         }
 
+        public void checkElements()
+        {
+            if (K8Lib.GM == null) return;
+
+            GameObject GTTOD = K8Lib.GM.gameObject;
+            if (GTTOD == null)
+            {
+                Debug.LogError("GTTOD not found");
+                return;
+            }
+
+            GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
+            if (applicationSettingsMenu == null)
+            {
+                Debug.LogError("Application settings menu not found");
+                return;
+            }
+
+            if (applicationSettingsMenu.activeSelf == false)
+            {
+                return;
+            }
+
+            if (applicationSettingsMenu.transform.childCount < 4 + settingsElements.Count)
+            {
+                settingsElements.Clear();
+            }
+        }
+
         public class SettingsElement
         {
             public class TitleBar
@@ -58,9 +87,9 @@ namespace K8Lib
                 public TitleBar(string name, string text)
                 {
                     if (settingsElements.Contains(name)) return;
-                    if (GM == null) return;
+                    if (K8Lib.GM == null) return;
 
-                    GameObject GTTOD = GM.gameObject;
+                    GameObject GTTOD = K8Lib.GM.gameObject;
                     if (GTTOD == null)
                     {
                         Debug.LogError("GTTOD not found");
@@ -106,9 +135,9 @@ namespace K8Lib
                 public CheckBox(string name, string text, bool startingState, Action<bool> onValueChanged)
                 {
                     if (settingsElements.Contains(name)) return;
-                    if (GM == null) return;
+                    if (K8Lib.GM == null) return;
 
-                    GameObject GTTOD = GM.gameObject;
+                    GameObject GTTOD = K8Lib.GM.gameObject;
                     if (GTTOD == null)
                     {
                         Debug.LogError("GTTOD not found");
@@ -173,9 +202,9 @@ namespace K8Lib
                 public Slider(string name, string text, float startingValue, float minValue, float maxValue, bool useWholeNumbers, Action<float> onValueChanged)
                 {
                     if (settingsElements.Contains(name)) return;
-                    if (GM == null) return;
+                    if (K8Lib.GM == null) return;
 
-                    GameObject GTTOD = GM.gameObject;
+                    GameObject GTTOD = K8Lib.GM.gameObject;
                     if (GTTOD == null)
                     {
                         Debug.LogError("GTTOD not found");
@@ -284,7 +313,7 @@ namespace K8Lib
                 public DropDown(string name, string text, List<string> elements, int defaultindex, Action<int> OnValueChanged)
                 {
                     if (settingsElements.Contains(name)) return;
-                    if (GM == null) return;
+                    if (K8Lib.GM == null) return;
 
                     List<Dropdown.OptionData> options = new List<Dropdown.OptionData>();
                     foreach (string element in elements)
@@ -292,7 +321,7 @@ namespace K8Lib
                         options.Add(new Dropdown.OptionData(element));
                     }
 
-                    GameObject GTTOD = GM.gameObject;
+                    GameObject GTTOD = K8Lib.GM.gameObject;
                     if (GTTOD == null)
                     {
                         Debug.LogError("GTTOD not found");
@@ -370,9 +399,9 @@ namespace K8Lib
                 public TextInput(string name, string text, string existingText, string placeholderText, Action<string> OnValueChange)
                 {
                     if (settingsElements.Contains(name)) return;
-                    if (GM == null) return;
+                    if (K8Lib.GM == null) return;
 
-                    GameObject GTTOD = GM.gameObject;
+                    GameObject GTTOD = K8Lib.GM.gameObject;
                     if (GTTOD == null)
                     {
                         Debug.LogError("GTTOD not found");
