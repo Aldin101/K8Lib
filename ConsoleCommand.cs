@@ -58,7 +58,7 @@ namespace K8Lib.Commands
             {
                 foreach (var command in commandsInt)
                 {
-                    if (ConsoleSubmission.Contains(command.CommandName))
+                    if (ConsoleSubmission.ToLower().Contains(command.CommandName))
                     {
                         string[] digits = Regex.Split(ConsoleSubmission, "\\D+");
                         for (int i = 0; i < digits.Length; i++)
@@ -75,7 +75,7 @@ namespace K8Lib.Commands
 
                 foreach (var command in commandsString)
                 {
-                    if (ConsoleSubmission.Contains(command.CommandName))
+                    if (ConsoleSubmission.ToLower().Contains(command.CommandName))
                     {
                         command.OnCommandSentString?.Invoke(ConsoleSubmission);
                         return true;
@@ -126,7 +126,7 @@ namespace K8Lib.Commands
             {
                 foreach (var command in postfixCommandsInt)
                 {
-                    if (ConsoleSubmission.Contains(command.CommandName))
+                    if (ConsoleSubmission.ToLower().Contains(command.CommandName))
                     {
                         string[] digits = Regex.Split(ConsoleSubmission, "\\D+");
                         for (int i = 0; i < digits.Length; i++)
@@ -143,7 +143,7 @@ namespace K8Lib.Commands
 
                 foreach (var command in postfixCommandsString)
                 {
-                    if (ConsoleSubmission.Contains(command.CommandName))
+                    if (ConsoleSubmission.ToLower().Contains(command.CommandName))
                     {
                         command.OnCommandSentString?.Invoke(ConsoleSubmission);
                         return;
