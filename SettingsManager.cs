@@ -4,13 +4,15 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Reflection;
-namespace K8Lib
-{
-    public class SettingsManager
-    {
-        private static List<string> settingsElements = new List<string>();
+using System.Linq;
+using System.Collections;
 
-        public void scrollFix()
+namespace K8Lib.Settings
+{
+    internal static class Manager
+    {
+        public static Dictionary<string, object> settingsElements = new Dictionary<string, object>();
+        public static void scrollFix()
         {
             GameObject settingsMenu = GameObject.Find("SettingsMenu");
             if (settingsMenu == null) return;
@@ -26,7 +28,7 @@ namespace K8Lib
 
             if (activeObject == null) return;
 
-            var optionsMenu = GTTOD.GetComponent<ac_OptionsMenu>();
+            var optionsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>();
             var field = typeof(ac_OptionsMenu).GetField("MaxScrollValue", BindingFlags.NonPublic | BindingFlags.Instance);
             switch (activeObject.name)
             {
@@ -50,18 +52,16 @@ namespace K8Lib
             }
         }
 
-        public void checkElements()
+        public static void checkElements()
         {
-            if (K8Lib.GM == null) return;
-
-            GameObject GTTOD = K8Lib.GM.gameObject;
+            GameObject GTTOD = GameManager.GM.gameObject;
             if (GTTOD == null)
             {
                 Debug.LogError("GTTOD not found");
                 return;
             }
 
-            GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+            GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
 
             if (applicationSettingsMenu == null)
             {
@@ -76,397 +76,388 @@ namespace K8Lib
 
             if (applicationSettingsMenu.transform.childCount < 4 + settingsElements.Count)
             {
-                settingsElements.Clear();
+                restoreElements();
             }
         }
 
-        public class SettingsElement
+        public static void restoreElements()
         {
-            public class TitleBar
+            GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
+            int count = 0;
+
+            foreach (var element in settingsElements)
             {
-                public TitleBar(string name, string text)
+                if (element.Value == null) continue;
+                if (element.Value is TitleBar)
                 {
-                    if (settingsElements.Contains(name)) return;
-                    if (K8Lib.GM == null) return;
+                    TitleBar titleBar = element.Value as TitleBar;
+                    titleBar.gameObject = GameObject.Instantiate(titleBar.prefab, applicationSettingsMenu.transform, false);
+                    titleBar.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                }
+                else if (element.Value is CheckBox)
+                {
+                    CheckBox checkBox = element.Value as CheckBox;
+                    checkBox.gameObject = GameObject.Instantiate(checkBox.prefab, applicationSettingsMenu.transform, false);
+                    checkBox.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                }
+                else if (element.Value is Slider)
+                {
+                    Slider slider = element.Value as Slider;
+                    slider.gameObject = GameObject.Instantiate(slider.prefab, applicationSettingsMenu.transform, false);
+                    slider.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                }
+                else if (element.Value is DropDown)
+                {
+                    DropDown dropdown = element.Value as DropDown;
+                    dropdown.gameObject = GameObject.Instantiate(dropdown.prefab, applicationSettingsMenu.transform, false);
+                    dropdown.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                }
+                else if (element.Value is TextInput)
+                {
+                    TextInput textInput = element.Value as TextInput;
+                    textInput.gameObject = GameObject.Instantiate(textInput.prefab, applicationSettingsMenu.transform, false);
+                    textInput.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                }
+                count++;
+            }
+        }
+    }
 
-                    GameObject GTTOD = K8Lib.GM.gameObject;
-                    if (GTTOD == null)
+    public class TitleBar
+    {
+        public GameObject gameObject;
+        public GameObject prefab;
+        public TitleBar(string name, string text)
+        {
+            if (Manager.settingsElements.Keys.Contains(name)) return;
+
+            BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text));
+        }
+
+        private IEnumerator createElement(string name, string text)
+        {
+            while (!GameManager.GM) yield return null;
+
+            GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
+            while (!applicationSettingsMenu.activeSelf) yield return null;
+
+            GameObject inGameTitleBar = applicationSettingsMenu.transform.GetChild(1).gameObject;
+
+            GameObject titleBar = GameObject.Instantiate(inGameTitleBar, applicationSettingsMenu.transform, false);
+            titleBar.name = name;
+            titleBar.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 3)), 0);
+
+            Text titleBarText = titleBar.GetComponentsInChildren<Text>()[0];
+
+            titleBarText.text = text;
+
+            gameObject = titleBar;
+
+            prefab = GameObject.Instantiate(titleBar);
+            GameObject.DontDestroyOnLoad(prefab);
+            prefab.hideFlags = HideFlags.HideAndDontSave;
+
+            Manager.settingsElements.Add(name, this);
+        }
+    }
+
+    public class CheckBox
+    {
+        public GameObject gameObject;
+        public GameObject prefab;
+
+        public CheckBox(string name, string text, bool startingState, Action<bool> onValueChanged)
+        {
+            if (Manager.settingsElements.Keys.Contains(name)) return;
+
+            BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text, startingState, onValueChanged));
+        }
+
+        private IEnumerator createElement(string name, string text, bool startingState, Action<bool> onValueChanged)
+        {
+            while (!GameManager.GM) yield return null;
+
+            GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
+            while (!applicationSettingsMenu.activeSelf) yield return null;
+
+            ac_OptionsMenu optionsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>();
+            GameObject graphicsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
+
+            GameObject inGameCheckBox = graphicsMenu.transform.GetChild(3).gameObject;
+
+
+            GameObject checkBox = GameObject.Instantiate(inGameCheckBox, applicationSettingsMenu.transform, false);
+            checkBox.name = name;
+            checkBox.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 3)), 0);
+
+            checkBox.transform.GetChild(1).gameObject.name = $"{name}Toggle";
+
+            Text checkBoxText = checkBox.transform.GetChild(0).GetChild(0).GetComponent<Text>();
+            checkBoxText.text = text;
+
+            Toggle toggle = checkBox.transform.GetChild(1).gameObject.GetComponent<Toggle>();
+            Toggle.DestroyImmediate(toggle);
+            toggle = checkBox.transform.GetChild(1).gameObject.AddComponent<Toggle>();
+            toggle.onValueChanged.AddListener(new UnityAction<bool>(onValueChanged));
+
+            toggle.graphic = checkBox.transform.GetChild(1).gameObject.
+                transform.GetChild(0).gameObject.
+                transform.GetChild(0).gameObject.GetComponent<Image>();
+
+            toggle.isOn = startingState;
+
+            gameObject = checkBox;
+
+            prefab = GameObject.Instantiate(checkBox);
+            GameObject.DontDestroyOnLoad(prefab);
+            prefab.hideFlags = HideFlags.HideAndDontSave;
+
+            Manager.settingsElements.Add(name, this);
+        }
+    }
+
+    public class Slider
+    {
+        public GameObject gameObject;
+        public GameObject prefab;
+        public Slider(string name, string text, float minValue, float maxValue, float startingValue, bool useWholeNumbers, Action<float> onValueChanged)
+        {
+            if (Manager.settingsElements.Keys.Contains(name)) return;
+
+            BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text, minValue, maxValue, startingValue, useWholeNumbers, onValueChanged));
+        }
+
+        private IEnumerator createElement(string name, string text, float minValue, float maxValue, float startingValue, bool useWholeNumbers, Action<float> onValueChanged)
+        {
+            while (!GameManager.GM) yield return null;
+
+            GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
+            while (!applicationSettingsMenu.activeSelf) yield return null;
+
+            ac_OptionsMenu optionsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>();
+            GameObject graphicsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
+
+            GameObject inGameSlider = graphicsMenu.transform.GetChild(5).gameObject;
+
+            GameObject slider = GameObject.Instantiate(inGameSlider, applicationSettingsMenu.transform, false);
+
+            slider.name = name;
+            slider.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 3)), 0);
+
+            Text sliderText = slider.transform.GetChild(0).GetChild(0).GetComponent<Text>();
+            sliderText.text = text;
+            GameObject settingsUI = slider.transform.GetChild(1).gameObject;
+
+            settingsUI.transform.GetChild(0).gameObject.name = $"{name}Slider";
+            settingsUI.transform.GetChild(1).gameObject.name = $"{name}Input";
+            settingsUI.transform.GetChild(1).transform.
+                GetChild(0).gameObject.name = $"{name} Input Caret";
+
+
+            UnityEngine.UI.Slider sliderBody = settingsUI.transform.GetChild(0).gameObject.GetComponent<UnityEngine.UI.Slider>();
+            UnityEngine.UI.Slider.DestroyImmediate(sliderBody);
+            sliderBody = settingsUI.transform.GetChild(0).gameObject.AddComponent<UnityEngine.UI.Slider>();
+
+            sliderBody.onValueChanged.RemoveAllListeners();
+            sliderBody.onValueChanged.AddListener(new UnityAction<float>(onValueChanged));
+            sliderBody.minValue = minValue;
+            sliderBody.maxValue = maxValue;
+            sliderBody.wholeNumbers = useWholeNumbers;
+
+            sliderBody.image = settingsUI.transform.GetChild(0).transform.
+                GetChild(2).gameObject.transform.
+                GetChild(0).gameObject.GetComponent<Image>();
+
+            sliderBody.handleRect = settingsUI.transform.GetChild(0).transform.
+                GetChild(2).gameObject.transform.
+                GetChild(0).gameObject.GetComponent<RectTransform>();
+
+            sliderBody.fillRect = settingsUI.transform.GetChild(0).transform.
+                GetChild(1).transform.
+                GetChild(0).gameObject.GetComponent<RectTransform>();
+
+            InputField input = settingsUI.transform.GetChild(1).gameObject.GetComponent<InputField>();
+            InputField.DestroyImmediate(input);
+            input = settingsUI.transform.GetChild(1).gameObject.AddComponent<InputField>();
+            input.onSubmit.RemoveAllListeners();
+            input.onSubmit.AddListener((string value) =>
+            {
+                float newValue;
+                if (float.TryParse(value, out newValue))
+                {
+                    if (newValue < minValue)
                     {
-                        Debug.LogError("GTTOD not found");
-                        return;
+                        newValue = minValue;
                     }
-
-                    GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
-
-                    if (applicationSettingsMenu == null)
+                    else if (newValue > maxValue)
                     {
-                        Debug.LogError("Application settings menu not found");
-                        return;
+                        newValue = maxValue;
                     }
+                    sliderBody.value = newValue;
+                }
+            });
 
-                    if (applicationSettingsMenu.activeSelf == false)
-                    {
-                        return;
-                    }
+            sliderBody.onValueChanged.AddListener((float value) =>
+            {
+                input.transform.GetChild(2).GetComponent<Text>().text = value.ToString();
+            });
 
-                    GameObject inGameTitleBar = applicationSettingsMenu.transform.GetChild(1).gameObject;
+            sliderBody.value = startingValue;
 
-                    if (inGameTitleBar == null)
-                    {
-                        Debug.LogError("In game title bar not found");
-                        return;
-                    }
+            gameObject = slider;
+
+            prefab = GameObject.Instantiate(slider);
+            GameObject.DontDestroyOnLoad(prefab);
+            prefab.hideFlags = HideFlags.HideAndDontSave;
+
+            Manager.settingsElements.Add(name, this);
+        }
+    }
+
+    public class DropDown
+    {
+        public GameObject gameObject;
+        public GameObject prefab;
+
+        public DropDown(string name, string text, List<string> elements, int defaultIndex, Action<int> OnValueChanged)
+        {
+            if (Manager.settingsElements.Keys.Contains(name)) return;
+
+            BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text, elements, defaultIndex, OnValueChanged));
+        }
+
+        private IEnumerator createElement(string name, string text, List<string> elements, int defaultIndex, Action<int> OnValueChanged)
+        {
+            while (!GameManager.GM) yield return null;
+
+            List<Dropdown.OptionData> options = new List<Dropdown.OptionData>();
+            foreach (string element in elements)
+            {
+                options.Add(new Dropdown.OptionData(element));
+            }
+
+            GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
+            while (!applicationSettingsMenu.activeSelf) yield return null;
+
+            ac_OptionsMenu optionsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>();
+            GameObject graphicsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
 
 
-                    GameObject titleBar = GameObject.Instantiate(inGameTitleBar, applicationSettingsMenu.transform, false);
-                    titleBar.name = name;
-                    titleBar.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
+            GameObject resolutionPicker = graphicsMenu.transform.GetChild(2).gameObject;
 
-                    Text titleBarText = titleBar.GetComponentsInChildren<Text>()[0];
 
-                    titleBarText.text = text;
+            GameObject referenceChild = resolutionPicker.transform.GetChild(1).gameObject;
+            GameObject dropdown = GameObject.Instantiate(resolutionPicker, applicationSettingsMenu.transform, false);
+            dropdown.name = name;
+            dropdown.transform.localPosition = new Vector3(0, 75 - (50 * (Manager.settingsElements.Count)), 0);
+            dropdown.transform.GetChild(0).GetChild(0).gameObject.GetComponent<Text>().text = text;
+            dropdown.transform.GetChild(1).gameObject.name = $"{name}Dropdown";
 
-                    settingsElements.Add(name);
+            Dropdown dropdownComponent = dropdown.transform.GetChild(1).gameObject.GetComponent<Dropdown>();
+            var originalValues = new Dictionary<string, object>();
+            foreach (var prop in dropdownComponent.GetType().GetProperties())
+            {
+                if (prop.CanRead)
+                {
+                    originalValues[prop.Name] = prop.GetValue(dropdownComponent, null);
                 }
             }
 
-            public class CheckBox
+            Dropdown.DestroyImmediate(dropdownComponent);
+            dropdownComponent = dropdown.transform.GetChild(1).gameObject.AddComponent<Dropdown>();
+
+            foreach (var prop in dropdownComponent.GetType().GetProperties())
             {
-                public CheckBox(string name, string text, bool startingState, Action<bool> onValueChanged)
+                if (prop.Name != "onValueChanged" && prop.CanWrite && originalValues.ContainsKey(prop.Name))
                 {
-                    if (settingsElements.Contains(name)) return;
-                    if (K8Lib.GM == null) return;
-
-                    GameObject GTTOD = K8Lib.GM.gameObject;
-                    if (GTTOD == null)
-                    {
-                        Debug.LogError("GTTOD not found");
-                        return;
-                    }
-
-                    GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
-
-                    if (applicationSettingsMenu == null)
-                    {
-                        Debug.LogError("Application settings menu not found");
-                        return;
-                    }
-
-                    if (applicationSettingsMenu.activeSelf == false)
-                    {
-                        return;
-                    }
-
-                    ac_OptionsMenu optionsMenu = GTTOD.GetComponent<ac_OptionsMenu>();
-                    GameObject graphicsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
-                    if (graphicsMenu == null)
-                    {
-                        Debug.LogError("Graphics menu not found");
-                        return;
-                    }
-
-                    GameObject inGameCheckBox = graphicsMenu.transform.GetChild(3).gameObject;
-                    if (inGameCheckBox == null)
-                    {
-                        Debug.LogError("In game check box not found");
-                        return;
-                    }
-
-
-                    GameObject checkBox = GameObject.Instantiate(inGameCheckBox, applicationSettingsMenu.transform, false);
-                    checkBox.name = name;
-                    checkBox.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
-
-                    checkBox.transform.GetChild(1).gameObject.name = $"{name}Toggle";
-
-                    Text checkBoxText = checkBox.transform.GetChild(0).GetChild(0).GetComponent<Text>();
-                    checkBoxText.text = text;
-
-                    Toggle toggle = checkBox.transform.GetChild(1).gameObject.GetComponent<Toggle>();
-                    Toggle.DestroyImmediate(toggle);
-                    toggle = checkBox.transform.GetChild(1).gameObject.AddComponent<Toggle>();
-                    toggle.onValueChanged.AddListener(new UnityAction<bool>(onValueChanged));
-
-                    toggle.graphic = checkBox.transform.GetChild(1).gameObject.
-                        transform.GetChild(0).gameObject.
-                        transform.GetChild(0).gameObject.GetComponent<Image>();
-
-                    toggle.isOn = startingState;
-
-                    settingsElements.Add(name);
+                    prop.SetValue(dropdownComponent, originalValues[prop.Name], null);
                 }
             }
 
-            public class Slider
+            dropdownComponent.options = options;
+            dropdownComponent.value = defaultIndex;
+
+            dropdownComponent.onValueChanged.RemoveAllListeners();
+            dropdownComponent.onValueChanged.AddListener(new UnityAction<int>(OnValueChanged));
+
+            gameObject = dropdown;
+
+            prefab = GameObject.Instantiate(dropdown);
+            GameObject.DontDestroyOnLoad(prefab);
+            prefab.hideFlags = HideFlags.HideAndDontSave;
+
+            Manager.settingsElements.Add(name, this);
+        }
+    }
+
+    public class TextInput
+    {
+        public GameObject gameObject;
+        public GameObject prefab;
+        public TextInput(string name, string text, string existingText, string placeholderText, Action<string>? OnSubmit, Action<string>? OnValueChange = null)
+        {
+            if (Manager.settingsElements.Keys.Contains(name)) return;
+
+            BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text, existingText, placeholderText, OnSubmit, OnValueChange));
+        }
+
+        private IEnumerator createElement(string name, string text, string existingText, string placeholderText, Action<string>? OnSubmit, Action<string>? OnValueChange)
+        {
+            while (!GameManager.GM) yield return null;
+            GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+
+            while (!applicationSettingsMenu.activeSelf) yield return null;
+
+            GameObject inGameTextInput = applicationSettingsMenu.transform.GetChild(2).gameObject;
+
+            GameObject textInput = GameObject.Instantiate(inGameTextInput, applicationSettingsMenu.transform, false);
+            textInput.name = name;
+            textInput.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 3)), 0);
+
+            textInput.transform.GetChild(0).GetChild(0).gameObject.GetComponent<Text>().text = text;
+            textInput.transform.GetChild(1).gameObject.name = $"{name}Input";
+
+            InputField inputComponent = textInput.transform.GetChild(1).gameObject.GetComponent<InputField>();
+            var originalValues = new Dictionary<string, object>();
+            foreach (var prop in inputComponent.GetType().GetProperties())
             {
-                public Slider(string name, string text, float startingValue, float minValue, float maxValue, bool useWholeNumbers, Action<float> onValueChanged)
+                if (prop.CanRead)
                 {
-                    if (settingsElements.Contains(name)) return;
-                    if (K8Lib.GM == null) return;
-
-                    GameObject GTTOD = K8Lib.GM.gameObject;
-                    if (GTTOD == null)
-                    {
-                        Debug.LogError("GTTOD not found");
-                        return;
-                    }
-
-                    GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
-
-                    if (applicationSettingsMenu == null)
-                    {
-                        Debug.LogError("Application settings menu not found");
-                        return;
-                    }
-
-                    if (applicationSettingsMenu.activeSelf == false)
-                    {
-                        return;
-                    }
-
-                    ac_OptionsMenu optionsMenu = GTTOD.GetComponent<ac_OptionsMenu>();
-                    GameObject graphicsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
-                    if (graphicsMenu == null)
-                    {
-                        Debug.LogError("Graphics menu not found");
-                        return;
-                    }
-
-                    GameObject inGameSlider = graphicsMenu.transform.GetChild(5).gameObject;
-                    if (inGameSlider == null)
-                    {
-                        Debug.LogError("In game slider not found");
-                        return;
-                    }
-
-                    GameObject slider = GameObject.Instantiate(inGameSlider, applicationSettingsMenu.transform, false);
-                    slider.name = name;
-                    slider.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
-
-                    Text sliderText = slider.transform.GetChild(0).GetChild(0).GetComponent<Text>();
-                    sliderText.text = text;
-
-                    GameObject settingsUI = slider.transform.GetChild(1).gameObject;
-
-                    settingsUI.transform.GetChild(0).gameObject.name = $"{name}Slider";
-                    settingsUI.transform.GetChild(1).gameObject.name = $"{name}Input";
-                    settingsUI.transform.GetChild(1).transform.
-                        GetChild(0).gameObject.name = $"{name} Input Caret";
-
-                    UnityEngine.UI.Slider sliderBody = settingsUI.transform.GetChild(0).gameObject.GetComponent<UnityEngine.UI.Slider>();
-                    UnityEngine.UI.Slider.DestroyImmediate(sliderBody);
-                    sliderBody = settingsUI.transform.GetChild(0).gameObject.AddComponent<UnityEngine.UI.Slider>();
-
-                    sliderBody.onValueChanged.RemoveAllListeners();
-                    sliderBody.onValueChanged.AddListener(new UnityAction<float>(onValueChanged));
-                    sliderBody.minValue = minValue;
-                    sliderBody.maxValue = maxValue;
-                    sliderBody.wholeNumbers = useWholeNumbers;
-
-                    sliderBody.image = settingsUI.transform.GetChild(0).transform.
-                        GetChild(2).gameObject.transform.
-                        GetChild(0).gameObject.GetComponent<Image>();
-
-                    sliderBody.handleRect = settingsUI.transform.GetChild(0).transform.
-                        GetChild(2).gameObject.transform.
-                        GetChild(0).gameObject.GetComponent<RectTransform>();
-
-                    sliderBody.fillRect = settingsUI.transform.GetChild(0).transform.
-                        GetChild(1).transform.
-                        GetChild(0).gameObject.GetComponent<RectTransform>();
-
-
-                    InputField input = settingsUI.transform.GetChild(1).gameObject.GetComponent<InputField>();
-                    InputField.DestroyImmediate(input);
-                    input = settingsUI.transform.GetChild(1).gameObject.AddComponent<InputField>();
-                    input.onSubmit.RemoveAllListeners();
-                    input.onSubmit.AddListener((string value) =>
-                    {
-                        float newValue;
-                        if (float.TryParse(value, out newValue))
-                        {
-                            if (newValue < minValue)
-                            {
-                                newValue = minValue;
-                            }
-                            else if (newValue > maxValue)
-                            {
-                                newValue = maxValue;
-                            }
-                            sliderBody.value = newValue;
-                        }
-                    });
-
-                    sliderBody.onValueChanged.AddListener((float value) =>
-                    {
-                        input.transform.GetChild(2).GetComponent<Text>().text = value.ToString();
-                    });
-
-                    sliderBody.value = startingValue;
-
-                    settingsElements.Add(name);
+                    originalValues[prop.Name] = prop.GetValue(inputComponent, null);
                 }
             }
 
-            public class DropDown
+            InputField.DestroyImmediate(inputComponent);
+            inputComponent = textInput.transform.GetChild(1).gameObject.AddComponent<InputField>();
+
+            foreach (var prop in inputComponent.GetType().GetProperties())
             {
-                public DropDown(string name, string text, List<string> elements, int defaultindex, Action<int> OnValueChanged)
+                if (prop.Name != "onValueChanged" && prop.Name != "onSubmit" && prop.CanWrite && originalValues.ContainsKey(prop.Name))
                 {
-                    if (settingsElements.Contains(name)) return;
-                    if (K8Lib.GM == null) return;
-
-                    List<Dropdown.OptionData> options = new List<Dropdown.OptionData>();
-                    foreach (string element in elements)
-                    {
-                        options.Add(new Dropdown.OptionData(element));
-                    }
-
-                    GameObject GTTOD = K8Lib.GM.gameObject;
-                    if (GTTOD == null)
-                    {
-                        Debug.LogError("GTTOD not found");
-                        return;
-                    }
-
-                    GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
-
-                    if (applicationSettingsMenu == null)
-                    {
-                        Debug.LogError("Application settings menu not found");
-                        return;
-                    }
-
-                    if (applicationSettingsMenu.activeSelf == false)
-                    {
-                        return;
-                    }
-
-                    ac_OptionsMenu optionsMenu = GTTOD.GetComponent<ac_OptionsMenu>();
-                    GameObject graphicsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
-                    if (graphicsMenu == null)
-                    {
-                        Debug.LogError("Graphics menu not found");
-                        return;
-                    }
-
-                    GameObject resolutionPicker = graphicsMenu.transform.GetChild(2).gameObject;
-                    if (resolutionPicker == null)
-                    {
-                        Debug.LogError("Resolution picker not found");
-                        return;
-                    }
-
-                    GameObject referenceChild = resolutionPicker.transform.GetChild(1).gameObject;
-                    GameObject dropdown = GameObject.Instantiate(resolutionPicker, applicationSettingsMenu.transform, false);
-                    dropdown.name = name;
-                    dropdown.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
-                    dropdown.transform.GetChild(0).GetChild(0).gameObject.GetComponent<Text>().text = text;
-                    dropdown.transform.GetChild(1).gameObject.name = $"{name}Dropdown";
-
-                    Dropdown dropdownComponent = dropdown.transform.GetChild(1).gameObject.GetComponent<Dropdown>();
-                    var originalValues = new Dictionary<string, object>();
-                    foreach (var prop in dropdownComponent.GetType().GetProperties())
-                    {
-                        if (prop.CanRead)
-                        {
-                            originalValues[prop.Name] = prop.GetValue(dropdownComponent, null);
-                        }
-                    }
-
-                    Dropdown.DestroyImmediate(dropdownComponent);
-                    dropdownComponent = dropdown.transform.GetChild(1).gameObject.AddComponent<Dropdown>();
-
-                    foreach (var prop in dropdownComponent.GetType().GetProperties())
-                    {
-                        if (prop.Name != "onValueChanged" && prop.CanWrite && originalValues.ContainsKey(prop.Name))
-                        {
-                            prop.SetValue(dropdownComponent, originalValues[prop.Name], null);
-                        }
-                    }
-
-                    dropdownComponent.options = options;
-                    dropdownComponent.value = defaultindex;
-
-                    dropdownComponent.onValueChanged.RemoveAllListeners();
-                    dropdownComponent.onValueChanged.AddListener(new UnityAction<int>(OnValueChanged));
-
-                    settingsElements.Add(name);
+                    prop.SetValue(inputComponent, originalValues[prop.Name], null);
                 }
             }
 
-            public class TextInput
-            {
-                public TextInput(string name, string text, string existingText, string placeholderText, Action<string> OnValueChange)
-                {
-                    if (settingsElements.Contains(name)) return;
-                    if (K8Lib.GM == null) return;
+            inputComponent.text = existingText;
+            inputComponent.placeholder.GetComponent<Text>().text = placeholderText;
+            inputComponent.onSubmit.RemoveAllListeners();
+            inputComponent.onValueChanged.RemoveAllListeners();
 
-                    GameObject GTTOD = K8Lib.GM.gameObject;
-                    if (GTTOD == null)
-                    {
-                        Debug.LogError("GTTOD not found");
-                        return;
-                    }
+            if (OnSubmit != null) inputComponent.onSubmit.AddListener(new UnityAction<string>(OnSubmit));
+            if (OnValueChange != null) inputComponent.onValueChanged.AddListener(new UnityAction<string>(OnValueChange));
 
-                    GameObject applicationSettingsMenu = GTTOD.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+            gameObject = textInput;
 
-                    if (applicationSettingsMenu == null)
-                    {
-                        Debug.LogError("Application settings menu not found");
-                        return;
-                    }
+            prefab = GameObject.Instantiate(textInput);
+            GameObject.DontDestroyOnLoad(prefab);
+            prefab.hideFlags = HideFlags.HideAndDontSave;
 
-                    if (applicationSettingsMenu.activeSelf == false)
-                    {
-                        return;
-                    }
-
-                    GameObject inGameTextInput = applicationSettingsMenu.transform.GetChild(2).gameObject;
-                    if (inGameTextInput == null)
-                    {
-                        Debug.LogError("In game text input not found");
-                        return;
-                    }
-
-                    GameObject textInput = GameObject.Instantiate(inGameTextInput, applicationSettingsMenu.transform, false);
-                    textInput.name = name;
-                    textInput.transform.localPosition = new Vector3(0, 225 - (50 * (settingsElements.Count + 3)), 0);
-
-                    textInput.transform.GetChild(0).GetChild(0).gameObject.GetComponent<Text>().text = text;
-                    textInput.transform.GetChild(1).gameObject.name = $"{name}Input";
-
-                    InputField inputComponent = textInput.transform.GetChild(1).gameObject.GetComponent<InputField>();
-                    var originalValues = new Dictionary<string, object>();
-                    foreach (var prop in inputComponent.GetType().GetProperties())
-                    {
-                        if (prop.CanRead)
-                        {
-                            originalValues[prop.Name] = prop.GetValue(inputComponent, null);
-                        }
-                    }
-
-                    InputField.DestroyImmediate(inputComponent);
-                    inputComponent = textInput.transform.GetChild(1).gameObject.AddComponent<InputField>();
-
-                    foreach (var prop in inputComponent.GetType().GetProperties())
-                    {
-                        if (prop.Name != "onValueChanged" && prop.Name != "onSubmit" && prop.CanWrite && originalValues.ContainsKey(prop.Name))
-                        {
-                            prop.SetValue(inputComponent, originalValues[prop.Name], null);
-                        }
-                    }
-
-                    inputComponent.text = existingText;
-                    inputComponent.placeholder.GetComponent<Text>().text = placeholderText;
-                    inputComponent.onSubmit.RemoveAllListeners();
-                    inputComponent.onValueChanged.RemoveAllListeners();
-
-                    inputComponent.onValueChanged.AddListener(new UnityAction<string>(OnValueChange));
-                    inputComponent.onSubmit.AddListener(new UnityAction<string>(OnValueChange));
-
-                    settingsElements.Add(name);
-                }
-            }
+            Manager.settingsElements.Add(name, this);
         }
     }
 }

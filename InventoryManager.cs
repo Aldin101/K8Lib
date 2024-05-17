@@ -1,32 +1,29 @@
 ﻿using HarmonyLib;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Drawing;
+using System.Xml.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace K8Lib
+namespace K8Lib.Inventory
 {
-    public class InventoryManager
+    internal static class Manager
     {
-        private const int customIconCodeStart = 248581;
-        private static List<InventoryIcon> customIcons = new List<InventoryIcon>();
+        public const int customIconCodeStart = 248581;
+        public static List<InventoryIcon> customIcons = new List<InventoryIcon>();
 
-        public void checkElements()
+        public static void checkElements()
         {
-            if (K8Lib.GM == null) return;
-
-            GameObject GTTOD = K8Lib.GM.gameObject;
+            GameObject GTTOD = GameManager.GM.gameObject;
             if (GTTOD == null)
             {
                 Debug.LogError("GTTOD not found");
                 return;
             }
 
-            GameObject inventoryGrid = K8Lib.GM.gameObject.GetComponent<GTTOD_MemoryManager>().Inventory.GridContent.gameObject;
+            GameObject inventoryGrid = GameManager.GM.GetComponent<GTTOD_MemoryManager>().Inventory.GridContent.gameObject;
             bool found = false;
             for (int i = 0; i < inventoryGrid.transform.childCount; i++)
             {
@@ -44,103 +41,150 @@ namespace K8Lib
 
             if (found) return;
 
-            customIcons.Clear();
+            restoreElements();
         }
 
-        public class InventoryIcon
+        public static void restoreElements()
         {
-            public GameObject gameObject;
-            public string objectName;
-            public int ammount;
-            public int itemCode;
-            public Action onClick;
-            public InventoryIcon(string objectName, string name, string description, int ammount, Sprite icon, Action onClick)
+            GameObject GTTOD = GameManager.GM.gameObject;
+            if (GTTOD == null)
             {
-                foreach (InventoryIcon inv in customIcons)
-                {
-                    if (inv.objectName == objectName)
-                    {
-                        return;
-                    }
-                }
+                Debug.LogError("GTTOD not found");
+                return;
+            }
 
-                itemCode = customIconCodeStart + customIcons.Count;
-                this.objectName = objectName;
-                this.ammount = ammount;
-                this.onClick = onClick;
+            GameObject inventoryGrid = GameManager.GM.GetComponent<GTTOD_MemoryManager>().Inventory.GridContent.gameObject;
 
-                if (K8Lib.GM == null) return;
+            if (inventoryGrid == null)
+            {
+                Debug.LogError("Inventory not found");
+                return;
+            }
 
-                GameObject GTTOD = K8Lib.GM.gameObject;
-                if (GTTOD == null)
-                {
-                    Debug.LogError("GTTOD not found");
-                    return;
-                }
+            GameObject gridItemPrefab = GameManager.GM.GetComponent<GTTOD_MemoryManager>().Inventory.ItemUI.gameObject;
 
-                GameObject inventoryGrid = K8Lib.GM.gameObject.GetComponent<GTTOD_MemoryManager>().Inventory.GridContent.gameObject;
-
-                if (inventoryGrid == null)
-                {
-                    Debug.LogError("Inventory not found");
-                    return;
-                }
-
-                GameObject gridItemPrefab = K8Lib.GM.gameObject.GetComponent<GTTOD_MemoryManager>().Inventory.ItemUI.gameObject;
-
+            foreach (InventoryIcon icon in customIcons)
+            {
                 GameObject gridItem = GameObject.Instantiate(gridItemPrefab, inventoryGrid.transform);
-                
+
                 GTTOD_GridItemUI gridItemUI = gridItem.GetComponent<GTTOD_GridItemUI>();
 
-                gridItemUI.SetUpIcon(name, description, icon, ammount, itemCode);
+                gridItemUI.SetUpIcon(icon.objectName, "", null, icon.amount == null ? 0 : (int)icon.amount, icon.itemCode);
 
-                AccessTools.Field(typeof(GTTOD_GridItemUI), "HeldItemIndex").SetValue(gridItemUI, itemCode);
+                AccessTools.Field(typeof(GTTOD_GridItemUI), "HeldItemIndex").SetValue(gridItemUI, icon.itemCode);
 
-                if (ammount == -1)
+                if (icon.amount == null)
                 {
                     Text itemCountText = AccessTools.Field(typeof(GTTOD_GridItemUI), "ItemCountText").GetValue(gridItemUI) as Text;
                     itemCountText.text = "";
                 }
-
-                gameObject = gridItem;
-                customIcons.Add(this);
-            }
-
-            public void setAmmount(int ammount)
-            {
-                ammount = this.ammount;
-
-                if (ammount == -1)
-                {
-                    Text itemCountText = AccessTools.Field(typeof(GTTOD_GridItemUI), "ItemCountText").GetValue(gameObject.GetComponent<GTTOD_GridItemUI>()) as Text;
-                    itemCountText.text = "";
-                } else
-                {
-                    Text itemCountText = AccessTools.Field(typeof(GTTOD_GridItemUI), "ItemCountText").GetValue(gameObject.GetComponent<GTTOD_GridItemUI>()) as Text;
-                    itemCountText.text = "x" + ammount.ToString();
-                }
-            }
-
-            public void removeIcon()
-            {
-                customIcons.Remove(this);
-                GameObject.Destroy(gameObject);
             }
         }
 
-        [HarmonyLib.HarmonyPatch(typeof(GTTOD_GridItemUI), "UseItem")]
+        [HarmonyPatch(typeof(GTTOD_GridItemUI), "UseItem")]
         private class GTTOD_GridItemUI_UseItem
         {
             static bool Prefix(GTTOD_GridItemUI __instance)
             {
                 int itemCode = (int)AccessTools.Field(typeof(GTTOD_GridItemUI), "HeldItemIndex").GetValue(__instance);
-                if (itemCode >= customIconCodeStart && itemCode <= customIconCodeStart + customIcons.Count)
+                if (itemCode >= Manager.customIconCodeStart && itemCode <= Manager.customIconCodeStart + customIcons.Count)
                 {
                     customIcons[itemCode - customIconCodeStart].onClick();
                     return false;
                 }
                 return true;
             }
+        }
+    }
+
+    public class InventoryIcon
+    {
+        public GameObject gameObject;
+        public GameObject prefab;
+        public string objectName;
+        public string name;
+        public string description;
+        public Sprite icon;
+        public int? amount;
+        public int itemCode;
+        public Action onClick;
+        public InventoryIcon(string objectName, string name, string description, int? amount, Sprite icon, Action onClick)
+        {
+            foreach (InventoryIcon inv in Manager.customIcons)
+            {
+                if (inv.objectName == objectName)
+                {
+                    return;
+                }
+            }
+
+            itemCode = Manager.customIconCodeStart + Manager.customIcons.Count;
+            this.objectName = objectName;
+            this.name = name;
+            this.description = description;
+            this.icon = icon;
+            this.amount = amount;
+            this.onClick = onClick;
+
+            BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(addIcon());
+        }
+
+        private IEnumerator addIcon()
+        {
+            while (GameManager.GM == null) yield return null;
+
+            GameObject inventoryGrid = GameManager.GM.GetComponent<GTTOD_MemoryManager>().Inventory.GridContent.gameObject;
+
+            if (inventoryGrid == null)
+            {
+                Debug.LogError("Inventory not found");
+                yield break;
+            }
+
+            GameObject gridItemPrefab = GameManager.GM.GetComponent<GTTOD_MemoryManager>().Inventory.ItemUI.gameObject;
+
+            GameObject gridItem = GameObject.Instantiate(gridItemPrefab, inventoryGrid.transform);
+
+            GTTOD_GridItemUI gridItemUI = gridItem.GetComponent<GTTOD_GridItemUI>();
+            gridItemUI.SetUpIcon(name, description, icon, amount != null ? (int)amount : 0, itemCode);
+
+            AccessTools.Field(typeof(GTTOD_GridItemUI), "HeldItemIndex").SetValue(gridItemUI, itemCode);
+
+            if (amount == null)
+            {
+                Text itemCountText = AccessTools.Field(typeof(GTTOD_GridItemUI), "ItemCountText").GetValue(gridItemUI) as Text;
+                itemCountText.text = "";
+            }
+
+            gameObject = gridItem;
+
+            prefab = GameObject.Instantiate(gameObject);
+            GameObject.DontDestroyOnLoad(prefab);
+            prefab.hideFlags = HideFlags.HideAndDontSave;
+
+            Manager.customIcons.Add(this);
+        }
+
+        public void setAmount(int? amount)
+        {
+            amount = this.amount;
+
+            if (amount == null)
+            {
+                Text itemCountText = AccessTools.Field(typeof(GTTOD_GridItemUI), "ItemCountText").GetValue(gameObject.GetComponent<GTTOD_GridItemUI>()) as Text;
+                itemCountText.text = "";
+            }
+            else
+            {
+                Text itemCountText = AccessTools.Field(typeof(GTTOD_GridItemUI), "ItemCountText").GetValue(gameObject.GetComponent<GTTOD_GridItemUI>()) as Text;
+                itemCountText.text = "x" + amount.ToString();
+            }
+        }
+
+        public void removeIcon()
+        {
+            Manager.customIcons.Remove(this);
+            GameObject.Destroy(gameObject);
         }
     }
 }
