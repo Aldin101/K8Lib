@@ -54,13 +54,6 @@ namespace K8Lib.Settings
 
         public static void checkElements()
         {
-            GameObject GTTOD = GameManager.GM.gameObject;
-            if (GTTOD == null)
-            {
-                Debug.LogError("GTTOD not found");
-                return;
-            }
-
             GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
 
             if (applicationSettingsMenu == null)
@@ -82,44 +75,37 @@ namespace K8Lib.Settings
 
         public static void restoreElements()
         {
-            GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
+            Dictionary<string, object> tempElements = settingsElements;
+            settingsElements = new Dictionary<string, object>();
 
-            int count = 0;
-
-            foreach (var element in settingsElements)
+            foreach (var element in tempElements)
             {
                 if (element.Value == null) continue;
                 if (element.Value is TitleBar)
                 {
                     TitleBar titleBar = element.Value as TitleBar;
-                    titleBar.gameObject = GameObject.Instantiate(titleBar.prefab, applicationSettingsMenu.transform, false);
-                    titleBar.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                    BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(titleBar.createElement(titleBar.name, titleBar.text));
                 }
                 else if (element.Value is CheckBox)
                 {
                     CheckBox checkBox = element.Value as CheckBox;
-                    checkBox.gameObject = GameObject.Instantiate(checkBox.prefab, applicationSettingsMenu.transform, false);
-                    checkBox.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                    BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(checkBox.createElement(checkBox.name, checkBox.text, checkBox.startingState, checkBox.onValueChanged));
                 }
                 else if (element.Value is Slider)
                 {
                     Slider slider = element.Value as Slider;
-                    slider.gameObject = GameObject.Instantiate(slider.prefab, applicationSettingsMenu.transform, false);
-                    slider.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                    BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(slider.createElement(slider.name, slider.text, slider.minValue, slider.maxValue, slider.startingValue, slider.useWholeNumbers, slider.onValueChanged));
                 }
                 else if (element.Value is DropDown)
                 {
-                    DropDown dropdown = element.Value as DropDown;
-                    dropdown.gameObject = GameObject.Instantiate(dropdown.prefab, applicationSettingsMenu.transform, false);
-                    dropdown.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                    DropDown dropDown = element.Value as DropDown;
+                    BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(dropDown.createElement(dropDown.name, dropDown.text, dropDown.elements, dropDown.defaultIndex, dropDown.OnValueChanged));
                 }
                 else if (element.Value is TextInput)
                 {
                     TextInput textInput = element.Value as TextInput;
-                    textInput.gameObject = GameObject.Instantiate(textInput.prefab, applicationSettingsMenu.transform, false);
-                    textInput.gameObject.transform.localPosition = new Vector3(0, 225 - (50 * (count + 3)), 0);
+                    BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(textInput.createElement(textInput.name, textInput.text, textInput.existingText, textInput.placeholderText, textInput.OnSubmit, textInput.OnValueChange));
                 }
-                count++;
             }
         }
     }
@@ -127,15 +113,21 @@ namespace K8Lib.Settings
     public class TitleBar
     {
         public GameObject gameObject;
-        public GameObject prefab;
+
+        internal string name;
+        internal string text;
+
         public TitleBar(string name, string text)
         {
             if (Manager.settingsElements.Keys.Contains(name)) return;
 
+            this.name = name;
+            this.text = text;
+
             BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text));
         }
 
-        private IEnumerator createElement(string name, string text)
+        internal IEnumerator createElement(string name, string text)
         {
             while (!GameManager.GM) yield return null;
 
@@ -155,10 +147,6 @@ namespace K8Lib.Settings
 
             gameObject = titleBar;
 
-            prefab = GameObject.Instantiate(titleBar);
-            GameObject.DontDestroyOnLoad(prefab);
-            prefab.hideFlags = HideFlags.HideAndDontSave;
-
             Manager.settingsElements.Add(name, this);
         }
     }
@@ -166,16 +154,25 @@ namespace K8Lib.Settings
     public class CheckBox
     {
         public GameObject gameObject;
-        public GameObject prefab;
+
+        internal string name;
+        internal string text;
+        internal bool startingState;
+        internal Action<bool> onValueChanged;
 
         public CheckBox(string name, string text, bool startingState, Action<bool> onValueChanged)
         {
             if (Manager.settingsElements.Keys.Contains(name)) return;
 
+            this.name = name;
+            this.text = text;
+            this.startingState = startingState;
+            this.onValueChanged = onValueChanged;
+
             BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text, startingState, onValueChanged));
         }
 
-        private IEnumerator createElement(string name, string text, bool startingState, Action<bool> onValueChanged)
+        internal IEnumerator createElement(string name, string text, bool startingState, Action<bool> onValueChanged)
         {
             while (!GameManager.GM) yield return null;
 
@@ -202,6 +199,10 @@ namespace K8Lib.Settings
             Toggle.DestroyImmediate(toggle);
             toggle = checkBox.transform.GetChild(1).gameObject.AddComponent<Toggle>();
             toggle.onValueChanged.AddListener(new UnityAction<bool>(onValueChanged));
+            toggle.onValueChanged.AddListener((bool value) =>
+            {
+                this.startingState = value;
+            });
 
             toggle.graphic = checkBox.transform.GetChild(1).gameObject.
                 transform.GetChild(0).gameObject.
@@ -211,10 +212,6 @@ namespace K8Lib.Settings
 
             gameObject = checkBox;
 
-            prefab = GameObject.Instantiate(checkBox);
-            GameObject.DontDestroyOnLoad(prefab);
-            prefab.hideFlags = HideFlags.HideAndDontSave;
-
             Manager.settingsElements.Add(name, this);
         }
     }
@@ -222,15 +219,31 @@ namespace K8Lib.Settings
     public class Slider
     {
         public GameObject gameObject;
-        public GameObject prefab;
+
+        internal string name;
+        internal string text;
+        internal float minValue;
+        internal float maxValue;
+        internal float startingValue;
+        internal bool useWholeNumbers;
+        internal Action<float> onValueChanged;
+
         public Slider(string name, string text, float minValue, float maxValue, float startingValue, bool useWholeNumbers, Action<float> onValueChanged)
         {
             if (Manager.settingsElements.Keys.Contains(name)) return;
 
+            this.name = name;
+            this.text = text;
+            this.minValue = minValue;
+            this.maxValue = maxValue;
+            this.startingValue = startingValue;
+            this.useWholeNumbers = useWholeNumbers;
+            this.onValueChanged = onValueChanged;
+
             BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text, minValue, maxValue, startingValue, useWholeNumbers, onValueChanged));
         }
 
-        private IEnumerator createElement(string name, string text, float minValue, float maxValue, float startingValue, bool useWholeNumbers, Action<float> onValueChanged)
+        internal IEnumerator createElement(string name, string text, float minValue, float maxValue, float startingValue, bool useWholeNumbers, Action<float> onValueChanged)
         {
             while (!GameManager.GM) yield return null;
 
@@ -304,15 +317,13 @@ namespace K8Lib.Settings
             sliderBody.onValueChanged.AddListener((float value) =>
             {
                 input.transform.GetChild(2).GetComponent<Text>().text = value.ToString();
+
+                this.startingValue = value;
             });
 
             sliderBody.value = startingValue;
 
             gameObject = slider;
-
-            prefab = GameObject.Instantiate(slider);
-            GameObject.DontDestroyOnLoad(prefab);
-            prefab.hideFlags = HideFlags.HideAndDontSave;
 
             Manager.settingsElements.Add(name, this);
         }
@@ -321,16 +332,27 @@ namespace K8Lib.Settings
     public class DropDown
     {
         public GameObject gameObject;
-        public GameObject prefab;
+
+        internal string name;
+        internal string text;
+        internal List<string> elements;
+        internal int defaultIndex;
+        internal Action<int> OnValueChanged;
 
         public DropDown(string name, string text, List<string> elements, int defaultIndex, Action<int> OnValueChanged)
         {
             if (Manager.settingsElements.Keys.Contains(name)) return;
 
+            this.name = name;
+            this.text = text;
+            this.elements = elements;
+            this.defaultIndex = defaultIndex;
+            this.OnValueChanged = OnValueChanged;
+
             BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text, elements, defaultIndex, OnValueChanged));
         }
 
-        private IEnumerator createElement(string name, string text, List<string> elements, int defaultIndex, Action<int> OnValueChanged)
+        internal IEnumerator createElement(string name, string text, List<string> elements, int defaultIndex, Action<int> OnValueChanged)
         {
             while (!GameManager.GM) yield return null;
 
@@ -384,12 +406,13 @@ namespace K8Lib.Settings
 
             dropdownComponent.onValueChanged.RemoveAllListeners();
             dropdownComponent.onValueChanged.AddListener(new UnityAction<int>(OnValueChanged));
+            dropdownComponent.onValueChanged.AddListener((int value) =>
+            {
+                defaultIndex = value;
+            });
 
             gameObject = dropdown;
 
-            prefab = GameObject.Instantiate(dropdown);
-            GameObject.DontDestroyOnLoad(prefab);
-            prefab.hideFlags = HideFlags.HideAndDontSave;
 
             Manager.settingsElements.Add(name, this);
         }
@@ -398,15 +421,29 @@ namespace K8Lib.Settings
     public class TextInput
     {
         public GameObject gameObject;
-        public GameObject prefab;
+
+        internal string name;
+        internal string text;
+        internal string existingText;
+        internal string placeholderText;
+        internal Action<string>? OnSubmit;
+        internal Action<string>? OnValueChange;
+
         public TextInput(string name, string text, string existingText, string placeholderText, Action<string>? OnSubmit, Action<string>? OnValueChange = null)
         {
             if (Manager.settingsElements.Keys.Contains(name)) return;
 
+            this.name = name;
+            this.text = text;
+            this.existingText = existingText;
+            this.placeholderText = placeholderText;
+            this.OnSubmit = OnSubmit;
+            this.OnValueChange = OnValueChange;
+
             BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent<K8Lib>().StartCoroutine(createElement(name, text, existingText, placeholderText, OnSubmit, OnValueChange));
         }
 
-        private IEnumerator createElement(string name, string text, string existingText, string placeholderText, Action<string>? OnSubmit, Action<string>? OnValueChange)
+        internal IEnumerator createElement(string name, string text, string existingText, string placeholderText, Action<string>? OnSubmit, Action<string>? OnValueChange)
         {
             while (!GameManager.GM) yield return null;
             GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
@@ -451,11 +488,23 @@ namespace K8Lib.Settings
             if (OnSubmit != null) inputComponent.onSubmit.AddListener(new UnityAction<string>(OnSubmit));
             if (OnValueChange != null) inputComponent.onValueChanged.AddListener(new UnityAction<string>(OnValueChange));
 
-            gameObject = textInput;
+            if (OnValueChange != null)
+            {
+                inputComponent.onValueChanged.AddListener((string value) =>
+                {
+                    existingText = value;
+                });
+            }
 
-            prefab = GameObject.Instantiate(textInput);
-            GameObject.DontDestroyOnLoad(prefab);
-            prefab.hideFlags = HideFlags.HideAndDontSave;
+            if (OnSubmit != null)
+            {
+                inputComponent.onSubmit.AddListener((string value) =>
+                {
+                    OnSubmit(value);
+                });
+            }
+
+            gameObject = textInput;
 
             Manager.settingsElements.Add(name, this);
         }

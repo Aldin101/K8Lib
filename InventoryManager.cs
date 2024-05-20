@@ -100,7 +100,6 @@ namespace K8Lib.Inventory
     public class InventoryIcon
     {
         public GameObject gameObject;
-        public GameObject prefab;
         public string objectName;
         public string name;
         public string description;
@@ -157,10 +156,6 @@ namespace K8Lib.Inventory
             }
 
             gameObject = gridItem;
-
-            prefab = GameObject.Instantiate(gameObject);
-            GameObject.DontDestroyOnLoad(prefab);
-            prefab.hideFlags = HideFlags.HideAndDontSave;
 
             Manager.customIcons.Add(this);
         }
