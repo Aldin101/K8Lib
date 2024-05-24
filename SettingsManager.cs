@@ -129,13 +129,19 @@ namespace K8Lib.Settings
 
         internal IEnumerator createElement(string name, string text)
         {
+            start:
+
             while (!GameManager.GM) yield return null;
 
             GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
 
-            while (!applicationSettingsMenu.activeSelf) yield return null;
+            while (!applicationSettingsMenu.activeSelf)
+            {
+                yield return null;
+                if (applicationSettingsMenu == null) goto start;
+            }
 
-            GameObject inGameTitleBar = applicationSettingsMenu.transform.GetChild(1).gameObject;
+                GameObject inGameTitleBar = applicationSettingsMenu.transform.GetChild(1).gameObject;
 
             GameObject titleBar = GameObject.Instantiate(inGameTitleBar, applicationSettingsMenu.transform, false);
             titleBar.name = name;
@@ -174,11 +180,17 @@ namespace K8Lib.Settings
 
         internal IEnumerator createElement(string name, string text, bool startingState, Action<bool> onValueChanged)
         {
+            start:
+
             while (!GameManager.GM) yield return null;
 
             GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
 
-            while (!applicationSettingsMenu.activeSelf) yield return null;
+            while (!applicationSettingsMenu.activeSelf)
+            {
+                yield return null;
+                if (applicationSettingsMenu == null) goto start;
+            }
 
             ac_OptionsMenu optionsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>();
             GameObject graphicsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
@@ -245,11 +257,17 @@ namespace K8Lib.Settings
 
         internal IEnumerator createElement(string name, string text, float minValue, float maxValue, float startingValue, bool useWholeNumbers, Action<float> onValueChanged)
         {
+            start:
+
             while (!GameManager.GM) yield return null;
 
             GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
 
-            while (!applicationSettingsMenu.activeSelf) yield return null;
+            while (!applicationSettingsMenu.activeSelf)
+            {
+                yield return null;
+                if (applicationSettingsMenu == null) goto start;
+            }
 
             ac_OptionsMenu optionsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>();
             GameObject graphicsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
@@ -354,6 +372,8 @@ namespace K8Lib.Settings
 
         internal IEnumerator createElement(string name, string text, List<string> elements, int defaultIndex, Action<int> OnValueChanged)
         {
+            start:
+
             while (!GameManager.GM) yield return null;
 
             List<Dropdown.OptionData> options = new List<Dropdown.OptionData>();
@@ -364,7 +384,11 @@ namespace K8Lib.Settings
 
             GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
 
-            while (!applicationSettingsMenu.activeSelf) yield return null;
+            while (!applicationSettingsMenu.activeSelf)
+            {
+                yield return null;
+                if (applicationSettingsMenu == null) goto start;
+            }
 
             ac_OptionsMenu optionsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>();
             GameObject graphicsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[2].gameObject;
@@ -445,10 +469,17 @@ namespace K8Lib.Settings
 
         internal IEnumerator createElement(string name, string text, string existingText, string placeholderText, Action<string>? OnSubmit, Action<string>? OnValueChange)
         {
+            start:
+
             while (!GameManager.GM) yield return null;
+
             GameObject applicationSettingsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>().OptionScreens[3].gameObject;
 
-            while (!applicationSettingsMenu.activeSelf) yield return null;
+            while (!applicationSettingsMenu.activeSelf)
+            {
+                yield return null;
+                if (applicationSettingsMenu == null) goto start;
+            }
 
             GameObject inGameTextInput = applicationSettingsMenu.transform.GetChild(2).gameObject;
 
