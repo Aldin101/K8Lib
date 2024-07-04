@@ -69,7 +69,7 @@ namespace K8Lib.Inventory
 
                 GTTOD_GridItemUI gridItemUI = gridItem.GetComponent<GTTOD_GridItemUI>();
 
-                gridItemUI.SetUpIcon(icon.objectName, "", null, icon.amount == null ? 0 : (int)icon.amount, icon.itemCode);
+                gridItemUI.SetUpIcon(icon.name, icon.description, icon.icon, icon.amount == null ? 0 : (int)icon.amount, icon.itemCode);
 
                 AccessTools.Field(typeof(GTTOD_GridItemUI), "HeldItemIndex").SetValue(gridItemUI, icon.itemCode);
 

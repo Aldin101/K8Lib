@@ -6,6 +6,7 @@ using UnityEngine.Events;
 using System.Reflection;
 using System.Linq;
 using System.Collections;
+using static UnityEngine.UIElements.StylePropertyAnimationSystem;
 
 namespace K8Lib.Settings
 {
@@ -14,41 +15,16 @@ namespace K8Lib.Settings
         public static Dictionary<string, object> settingsElements = new Dictionary<string, object>();
         public static void scrollFix()
         {
-            GameObject settingsMenu = GameObject.Find("SettingsMenu");
-            if (settingsMenu == null) return;
-
-            GameObject GTTOD = settingsMenu.transform.GetRoot().gameObject;
-            GameObject settings = GameObject.Find("SETTINGS");
-            GameObject controls = GameObject.Find("CONTROLS");
-            GameObject graphics = GameObject.Find("GRAPHICS");
             GameObject application = GameObject.Find("APPLICATION");
-            GameObject stats = GameObject.Find("STATS");
-
-            GameObject activeObject = settings ?? controls ?? graphics ?? application ?? stats;
-
-            if (activeObject == null) return;
 
             var optionsMenu = GameManager.GM.GetComponent<ac_OptionsMenu>();
             var field = typeof(ac_OptionsMenu).GetField("MaxScrollValue", BindingFlags.NonPublic | BindingFlags.Instance);
-            switch (activeObject.name)
+
+            if (application != null)
             {
-                case "SETTINGS":
-                    field.SetValue(optionsMenu, 150);
-                    break;
-                case "CONTROLS":
-                    field.SetValue(optionsMenu, 1020);
-                    break;
-                case "GRAPHICS":
-                    field.SetValue(optionsMenu, 450);
-                    break;
-                case "APPLICATION":
-                    int scrollValue = -600 + (50 * (settingsElements.Count + 4));
-                    if (scrollValue < 0) scrollValue = 0;
-                    field.SetValue(optionsMenu, scrollValue);
-                    break;
-                case "STATS":
-                    field.SetValue(optionsMenu, 0);
-                    break;
+                int scrollValue = -600 + (50 * (settingsElements.Count + 4));
+                if (scrollValue < 0) scrollValue = 0;
+                field.SetValue(optionsMenu, scrollValue);
             }
         }
 
@@ -334,8 +310,9 @@ namespace K8Lib.Settings
 
             sliderBody.onValueChanged.AddListener((float value) =>
             {
-                input.transform.GetChild(2).GetComponent<Text>().text = value.ToString();
-
+                //round to 3 decimal places
+                float roundedNumber = (float)Math.Round(value, 3);
+                input.transform.GetChild(2).GetComponent<Text>().text = roundedNumber.ToString();
                 this.startingValue = value;
             });
 
