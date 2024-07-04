@@ -117,7 +117,6 @@ namespace K8Lib.Inventory
                 }
             }
 
-            itemCode = Manager.customIconCodeStart + Manager.customIcons.Count;
             this.objectName = objectName;
             this.name = name;
             this.description = description;
@@ -132,6 +131,8 @@ namespace K8Lib.Inventory
         {
             while (GameManager.GM == null) yield return null;
 
+            itemCode = Manager.customIconCodeStart + Manager.customIcons.Count;
+            
             GameObject inventoryGrid = GameManager.GM.GetComponent<GTTOD_MemoryManager>().Inventory.GridContent.gameObject;
 
             if (inventoryGrid == null)
