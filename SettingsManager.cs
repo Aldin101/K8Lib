@@ -6,7 +6,6 @@ using UnityEngine.Events;
 using System.Reflection;
 using System.Linq;
 using System.Collections;
-using static UnityEngine.UIElements.StylePropertyAnimationSystem;
 
 namespace K8Lib.Settings
 {
@@ -377,7 +376,7 @@ namespace K8Lib.Settings
             GameObject referenceChild = resolutionPicker.transform.GetChild(1).gameObject;
             GameObject dropdown = GameObject.Instantiate(resolutionPicker, applicationSettingsMenu.transform, false);
             dropdown.name = name;
-            dropdown.transform.localPosition = new Vector3(0, 75 - (50 * (Manager.settingsElements.Count)), 0);
+            dropdown.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 4)), 0);
             dropdown.transform.GetChild(0).GetChild(0).gameObject.GetComponent<Text>().text = text;
             dropdown.transform.GetChild(1).gameObject.name = $"{name}Dropdown";
 
