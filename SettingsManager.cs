@@ -22,7 +22,7 @@ namespace K8Lib.Settings
 
             if (application != null)
             {
-                int scrollValue = -600 + (50 * (settingsElements.Count + 4));
+                int scrollValue = -600 + (50 * (settingsElements.Count + 5));
                 if (scrollValue < 0) scrollValue = 0;
                 field.SetValue(optionsMenu, scrollValue);
             }
@@ -121,7 +121,7 @@ namespace K8Lib.Settings
 
             GameObject titleBar = GameObject.Instantiate(inGameTitleBar, applicationSettingsMenu.transform, false);
             titleBar.name = name;
-            titleBar.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 3)), 0);
+            titleBar.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 4)), 0);
 
             Text titleBarText = titleBar.GetComponentsInChildren<Text>()[0];
 
@@ -176,7 +176,7 @@ namespace K8Lib.Settings
 
             GameObject checkBox = GameObject.Instantiate(inGameCheckBox, applicationSettingsMenu.transform, false);
             checkBox.name = name;
-            checkBox.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 3)), 0);
+            checkBox.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 4)), 0);
 
             checkBox.transform.GetChild(1).gameObject.name = $"{name}Toggle";
 
@@ -253,7 +253,7 @@ namespace K8Lib.Settings
             GameObject slider = GameObject.Instantiate(inGameSlider, applicationSettingsMenu.transform, false);
 
             slider.name = name;
-            slider.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 3)), 0);
+            slider.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 4)), 0);
 
             Text sliderText = slider.transform.GetChild(0).GetChild(0).GetComponent<Text>();
             sliderText.text = text;
@@ -462,7 +462,7 @@ namespace K8Lib.Settings
 
             GameObject textInput = GameObject.Instantiate(inGameTextInput, applicationSettingsMenu.transform, false);
             textInput.name = name;
-            textInput.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 3)), 0);
+            textInput.transform.localPosition = new Vector3(0, 225 - (50 * (Manager.settingsElements.Count + 4)), 0);
 
             textInput.transform.GetChild(0).GetChild(0).gameObject.GetComponent<Text>().text = text;
             textInput.transform.GetChild(1).gameObject.name = $"{name}Input";
